@@ -14,5 +14,5 @@ fn main() {
     
 
     gameboy.load_boot_rom("roms/dmg_boot.bin").expect("Failed to load boot ROM");
-    std::println!("Hello");
+    gameboy.run();
 }

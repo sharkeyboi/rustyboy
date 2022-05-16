@@ -54,15 +54,15 @@ pub struct Registers {
 impl Registers {
     pub fn new() -> Self {
         Self {
-            a:0x01,
+            a:0,
             b:0x00,
-            c:0x13,
-            d:0x00,
-            e:0xD8,
-            f:0xB0.into(),
-            h:0x01,
-            l:0x4D,
-            sp: 0xFFFE,
+            c:0,
+            d:0,
+            e:0,
+            f:0x00.into(),
+            h:0x00,
+            l:0x00,
+            sp: 0,
             pc: 0
         }
     }
@@ -92,7 +92,7 @@ impl Registers {
         }
     }
 
-    pub fn set_16(&mut self,name:Register16, value:u16) {
+    pub fn set_16(&mut self,name:&Register16, value:u16) {
         match name {
             Register16::AF => self.set_af(value),
             Register16::BC => self.set_bc(value),
@@ -103,7 +103,7 @@ impl Registers {
         }
     }
 
-    pub fn get_16(&self,name:Register16) -> u16 {
+    pub fn get_16(&self,name:&Register16) -> u16 {
         match name {
             Register16::BC => self.get_bc(),
             Register16::DE => self.get_de(),
@@ -183,9 +183,9 @@ mod tests {
     #[test]
     fn get_u16() {
         let register = Registers::new();
-        assert_eq!(register.get_16(Register16::AF),register.get_af());
-        assert_eq!(register.get_16(Register16::BC),register.get_bc());
-        assert_eq!(register.get_16(Register16::DE),register.get_de());
-        assert_eq!(register.get_16(Register16::HL),register.get_hl());
+        assert_eq!(register.get_16(&Register16::AF),register.get_af());
+        assert_eq!(register.get_16(&Register16::BC),register.get_bc());
+        assert_eq!(register.get_16(&Register16::DE),register.get_de());
+        assert_eq!(register.get_16(&Register16::HL),register.get_hl());
     }
 }

@@ -32,5 +32,10 @@ impl Gameboy {
         Ok(())
     }
 
+    pub fn run(&mut self) {
+        loop {
+            self.cpu.cycle(&mut self.memory);
+        }
+    }
 
 }

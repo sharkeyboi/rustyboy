@@ -17,7 +17,13 @@ impl Memory {
         }
     }
 
-    pub fn read_byte(&self, address: u16) -> u8{
+    pub fn read_8(&self, address: u16) -> u8{
         self.bytes[address as usize] 
+    }
+
+    pub fn read_16(&self, address:u16) -> u16 {
+        let lower = self.bytes[address as usize];
+        let upper = self.bytes[(address+1) as usize];
+        ((upper as u16) << 8) | lower as u16
     }
 }
