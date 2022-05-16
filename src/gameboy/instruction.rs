@@ -2,15 +2,20 @@ pub enum Instruction {
     ADD8(Register8),
     NOP,
     LD16(LoadSource16, LoadTarget16),
-    XOR8(Register8)
+    XOR8(Register8),
+    LD8(LoadSource8,LoadTarget8),
+    BIT(LoadSource8,u8),
+    JR(JumpCondition,LoadSource8)
 }
 
+#[derive(Debug)]
 pub enum LoadSource8 {
-    Reg(Register8),D8
+    Reg(Register8),Address(Register16),D8
 }
 
+#[derive(Debug)]
 pub enum LoadTarget8 {
-    Reg(Register8), HLI
+    Reg(Register8), Address(Register16), AddressDec(Register16)
 }
 
 #[derive(Debug)]
@@ -21,6 +26,11 @@ pub enum LoadSource16 {
 #[derive(Debug)]
 pub enum LoadTarget16 {
     Reg(Register16)
+}
+
+#[derive(Debug)]
+pub enum JumpCondition {
+    NZ
 }
 
 #[derive(Debug)]
@@ -57,6 +67,7 @@ impl Instruction {
 
     fn decode_prefixed(byte: u8) -> Option<Instruction> {
         match byte {
+            0x7C => Some(Instruction::BIT(LoadSource8::Reg(Register8::H),7)),
             _ => None
         }
     }
@@ -65,6 +76,11 @@ impl Instruction {
             0x00 => Some(Instruction::NOP),
             0x31 => Some(Instruction::LD16(LoadSource16::D16,LoadTarget16::Reg(Register16::SP))),
             0xAF => Some(Instruction::XOR8(Register8::A)),
+            0x21 => Some(Instruction::LD16(LoadSource16::D16, LoadTarget16::Reg(Register16::HL))),
+            0x32 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::AddressDec(Register16::HL))),
+            0x20 => Some(Instruction::JR(JumpCondition::NZ,LoadSource8::D8)),
+            0x0e => Some(Instruction::LD8(LoadSource8::D8,LoadTarget8::Reg(Register8::C))),
+            0x3e => Some(Instruction::LD8(LoadSource8::D8,LoadTarget8::Reg(Register8::A))),
             _ => None
         }
     }

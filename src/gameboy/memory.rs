@@ -26,4 +26,8 @@ impl Memory {
         let upper = self.bytes[(address+1) as usize];
         ((upper as u16) << 8) | lower as u16
     }
+
+    pub fn write_8(&mut self, address:u16,value:u8) {
+        self.bytes[address as usize] = value;
+    }
 }

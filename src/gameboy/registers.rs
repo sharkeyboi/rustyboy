@@ -66,7 +66,7 @@ impl Registers {
             pc: 0
         }
     }
-    pub fn get_8(&self,name:Register8) -> u8{
+    pub fn get_8(&self,name:&Register8) -> u8{
         match name {
             Register8::A => self.a,
             Register8::B => self.b,
@@ -79,7 +79,7 @@ impl Registers {
         }
     }
 
-    pub fn set_8(&mut self,name:Register8, value:u8) {
+    pub fn set_8(&mut self,name:&Register8, value:u8) {
         match name {
             Register8::A => self.a = value,
             Register8::B => self.b = value,

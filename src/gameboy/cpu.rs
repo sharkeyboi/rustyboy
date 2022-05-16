@@ -34,7 +34,7 @@ impl CPU {
 
     pub fn execute(&mut self, instruction: Instruction, memory: &mut Memory) -> u16{
         match instruction {
-            Instruction::ADD8(register) => {
+            Instruction::ADD8(ref register) => {
                 let new_value = self.add8(register);
                 self.registers.a = new_value;
                 self.registers.pc.wrapping_add(1)
@@ -59,16 +59,75 @@ impl CPU {
                     _ => self.registers.pc.wrapping_add(1)
                 }
             },
-            Instruction::XOR8(register) => {
+            Instruction::LD8(source, target) => {
+                let source_val = match source {
+                    LoadSource8::D8 => {
+                        memory.read_8(self.registers.pc+1)
+                    },
+                    LoadSource8::Reg(ref register) => {
+                        self.registers.get_8(register)
+                    },
+                    LoadSource8::Address(ref register) => {
+                        memory.read_8(self.registers.get_16(register))
+                    }
+                };
+                match target {
+                    LoadTarget8::Address(ref register) => {
+                        memory.write_8(self.registers.get_16(register),source_val);
+                    },
+                    LoadTarget8::Reg(ref register) => {
+                        self.registers.set_8(register,source_val);
+                    },
+                    LoadTarget8::AddressDec(ref register) => {
+                        let curr_address = self.registers.get_16(register);
+                        memory.write_8(curr_address,source_val);
+                        self.registers.set_16(register,curr_address-1);
+                    }
+                }
+                match source {
+                    LoadSource8::D8 => self.registers.pc.wrapping_add(2),
+                    _ => self.registers.pc.wrapping_add(1)
+                }
+            },
+            Instruction::XOR8(ref register) => {
                 let new_value = self.xor8(register);
                 self.registers.a = new_value;
                 self.registers.pc.wrapping_add(1)
+            },
+            Instruction::BIT(source, index) => {
+                match source {
+                    LoadSource8::Reg(ref register) => self.bit_test(register, index),
+                    _ => panic!("BIT source {:?} not implemented",source)
+                }
+                self.registers.pc.wrapping_add(2)
+            },
+            Instruction::JR(condition,source) => {
+                let source_val:i8 = match source {
+                    LoadSource8::D8 => memory.read_8(self.registers.pc+1) as i8,
+                    _ => panic!("JR Source {:?} not implemented",source)
+                };
+                let should_jump = match condition {
+                    JumpCondition::NZ => !self.registers.f.zero
+                };
+                self.jr(should_jump,source_val)
             }
         }
             
         }
+    
+    fn jr(&mut self, should_jump:bool,value:i8) -> u16 {
+        if should_jump {
+            if value < 0 {
+                self.registers.pc - (-value) as u16 + 2
+            } else {
+                self.registers.pc + value as u16 + 2
+            }
+        } else {
+            self.registers.pc.wrapping_add(2)
+        }
+    }
 
-    fn xor8(&mut self, register:Register8) -> u8 {
+    fn xor8(&mut self, register:&Register8) -> u8 {
         let value = self.registers.get_8(register);
         let new_value = self.registers.a ^ value;
         self.registers.f.zero = new_value == 0;
@@ -78,8 +137,13 @@ impl CPU {
         new_value
     }
 
-    fn add8(&mut self, register: Register8) -> u8 {
-        let value = self.registers.get_8(register);
+    fn bit_test(&mut self, register: &Register8, index:u8) {
+        let bit_value = (self.registers.get_8(register) >> index) & 0x01;
+        self.registers.f.zero = bit_value == 0;
+    }
+
+    fn add8(&mut self, register: &Register8) -> u8 {
+        let value = self.registers.get_8(&register);
         let (new_value,did_overflow) = self.registers.a.overflowing_add(value);
         self.registers.f.zero = new_value == 0;
         self.registers.f.subtract = false;
