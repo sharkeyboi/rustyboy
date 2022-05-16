@@ -27,7 +27,7 @@ impl Gameboy {
         let mut rom_file = File::open(path)?;
         let mut rom_data = Vec::new();
 
-        let rom_size = rom_file.read_to_end(&mut rom_data)?;
+        rom_file.read_to_end(&mut rom_data)?;
         self.memory.load_boot_rom(&rom_data);
         Ok(())
     }

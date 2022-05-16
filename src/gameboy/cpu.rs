@@ -46,13 +46,13 @@ impl CPU {
                         memory.read_16(self.registers.pc+1)
                     },
                     LoadSource16::Reg(ref register) => self.registers.get_16(register),
-                    _ => (panic!("{:?}",source))
+                    //_ => (panic!("{:?}",source))
                 };
                 match target {
                     LoadTarget16::Reg(ref register) => {
                         self.registers.set_16(register,source_val);
                     },
-                    _ => (panic!("{:?}",target))
+                    //_ => (panic!("{:?}",target))
                 }
                 match source {
                     LoadSource16::D16 => self.registers.pc.wrapping_add(3),
@@ -82,6 +82,14 @@ impl CPU {
                         let curr_address = self.registers.get_16(register);
                         memory.write_8(curr_address,source_val);
                         self.registers.set_16(register,curr_address-1);
+                    },
+                    LoadTarget8::OffsetAddress(ref register) => {
+                        let curr_address = 0xFF00 + self.registers.get_8(register) as u16;
+                        memory.write_8(curr_address,source_val)
+                    },
+                    LoadTarget8::OffsetA8 => {
+                        let curr_address = 0xFF00 + memory.read_8(self.registers.pc+1) as u16;
+                        memory.write_8(curr_address,source_val)
                     }
                 }
                 match source {
@@ -110,6 +118,10 @@ impl CPU {
                     JumpCondition::NZ => !self.registers.f.zero
                 };
                 self.jr(should_jump,source_val)
+            },
+            Instruction::INC8(ref register) => {
+                self.registers.set_8(register,self.registers.get_8(register) + 1);
+                self.registers.pc.wrapping_add(1)
             }
         }
             
