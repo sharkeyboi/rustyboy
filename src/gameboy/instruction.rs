@@ -1,4 +1,5 @@
 //Instruction sets, in order of appearance during development
+#[derive(Debug)]
 pub enum Instruction {
     ADD8(Register8),
     NOP,
@@ -8,7 +9,11 @@ pub enum Instruction {
     BIT(LoadSource8,u8),
     JR(JumpCondition,LoadSource8),
     INC8(Register8),
-    CALL(CallCondition)
+    CALL(CallCondition),
+    PUSH(Register16), // TODO: Verify that this should be a normal stack push, EG. Decrement SP, save upper byte, decrement again, save lower byte.
+    RL(LoadSource8),
+    INC16(Register16),
+    POP(Register16)
 }
 
 #[derive(Debug)]
@@ -23,7 +28,7 @@ pub enum LoadSource8 {
 
 #[derive(Debug)]
 pub enum LoadTarget8 {
-    Reg(Register8), Address(Register16), AddressDec(Register16), OffsetAddress(Register8), OffsetA8
+    Reg(Register8), Address(Register16), AddressDec(Register16), AddressInc(Register16),OffsetAddress(Register8), OffsetA8
 }
 
 #[derive(Debug)]
@@ -79,6 +84,7 @@ impl Instruction {
     fn decode_prefixed(byte: u8) -> Option<Instruction> {
         match byte {
             0x7C => Some(Instruction::BIT(LoadSource8::Reg(Register8::H),7)), // BIT 7 H
+            0x11 => Some(Instruction::RL(LoadSource8::Reg(Register8::C))), // RL C
             _ => None
         }
     }
@@ -101,6 +107,12 @@ impl Instruction {
             0x11 => Some(Instruction::LD16(LoadSource16::D16,LoadTarget16::Reg(Register16::DE))), // LD DE d16
             0x1A => Some(Instruction::LD8(LoadSource8::Address(Register16::DE),LoadTarget8::Reg(Register8::A))), // LD A (DE)
             0xCD => Some(Instruction::CALL(CallCondition::None)), // Call a16
+            0x4F => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::Reg(Register8::C))), // LD C A
+            0x06 => Some(Instruction::LD8(LoadSource8::D8,LoadTarget8::Reg(Register8::B))), // LD B d8
+            0xc5 => Some(Instruction::PUSH(Register16::BC)), // PUSH BC
+            0x17 => Some(Instruction::RL(LoadSource8::Reg(Register8::A))), // RL A
+            0x22 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::AddressInc(Register16::HL))), // LD (HL+) A
+            0xC1 => Some(Instruction::POP(Register16::BC)), // POP BC
             _ => None
         }
     }

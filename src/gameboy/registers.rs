@@ -172,13 +172,13 @@ mod tests {
     #[test]
     fn get_u8() {
         let register = Registers::new();
-        assert_eq!(register.get_8(Register8::A),register.a);
-        assert_eq!(register.get_8(Register8::B),register.b);
-        assert_eq!(register.get_8(Register8::C),register.c);
-        assert_eq!(register.get_8(Register8::D),register.d);
-        assert_eq!(register.get_8(Register8::E),register.e);
-        assert_eq!(register.get_8(Register8::H),register.h);
-        assert_eq!(register.get_8(Register8::L),register.l);
+        assert_eq!(register.get_8(&Register8::A),register.a);
+        assert_eq!(register.get_8(&Register8::B),register.b);
+        assert_eq!(register.get_8(&Register8::C),register.c);
+        assert_eq!(register.get_8(&Register8::D),register.d);
+        assert_eq!(register.get_8(&Register8::E),register.e);
+        assert_eq!(register.get_8(&Register8::H),register.h);
+        assert_eq!(register.get_8(&Register8::L),register.l);
     }
     #[test]
     fn get_u16() {

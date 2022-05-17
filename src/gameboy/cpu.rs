@@ -20,7 +20,8 @@ impl CPU {
         //If instruction byte is 0xCB, it is a prefixed instruction. Handle separately
         let prefixed = instruction_byte == 0xCB;
         if prefixed {
-            instruction_byte = memory.read_8(self.registers.pc+1);
+            self.registers.pc += 1;
+            instruction_byte = memory.read_8(self.registers.pc);
         }
         let next_pc = if let Some(instruction) = Instruction::decode(instruction_byte,prefixed) {
             self.execute(instruction, memory)
@@ -90,7 +91,13 @@ impl CPU {
                     LoadTarget8::OffsetA8 => {
                         let curr_address = 0xFF00 + memory.read_8(self.registers.pc+1) as u16;
                         memory.write_8(curr_address,source_val)
+                    },
+                    LoadTarget8::AddressInc(ref register) => {
+                        let curr_address = self.registers.get_16(register);
+                        memory.write_8(curr_address,source_val);
+                        self.registers.set_16(register,curr_address+1);
                     }
+                    _ => panic!("Error target {:?} not implemented",target)
                 }
                 match source {
                     LoadSource8::D8 => self.registers.pc.wrapping_add(2),
@@ -112,7 +119,7 @@ impl CPU {
                     LoadSource8::Reg(ref register) => self.bit_test(register, index),
                     _ => panic!("BIT source {:?} not implemented",source)
                 }
-                self.registers.pc.wrapping_add(2)
+                self.registers.pc.wrapping_add(1)
             },
             Instruction::JR(condition,source) => {
                 let source_val:i8 = match source {
@@ -137,10 +144,58 @@ impl CPU {
                     }
                 }
                 
+            },
+            Instruction::PUSH(ref register) => {
+                let source_val = self.registers.get_16(register);
+                self.push16(source_val,memory);
+                self.registers.pc.wrapping_add(1)
+            },
+            Instruction::RL(ref source) => {
+                match source {
+                    LoadSource8::Reg(ref register) => {
+                        let mut source_val = self.registers.get_8(register);
+                        source_val = self.rl(source_val);
+                        self.registers.set_8(register,source_val);
+                        self.registers.pc.wrapping_add(1)
+                    },
+                    _ => panic!("Error RL source {:?} not implemented",source)
+                }
+               
+            },
+            Instruction::POP(ref register) => {
+                let new_val = self.pop16(memory);
+                self.registers.set_16(register,new_val);
+                self.registers.pc.wrapping_add(1)
+            },
+            _ => {
+                panic!("Error, instruction {:?} not implemented",instruction);
             }
         }
             
         }
+
+    fn pop8(&mut self, memory: &Memory) -> u8 {
+        let value = memory.read_8(self.registers.sp);
+        self.registers.sp += 1;
+        value
+    }
+
+    fn pop16(&mut self, memory: &Memory) -> u16 {
+        let lower = self.pop8(memory);
+        let upper = self.pop8(memory);
+        (upper as u16) << 8
+        | lower as u16
+    }
+
+    fn rl(&mut self, val:u8) -> u8 {
+        let mut rotated_val = val << 1;
+        if self.registers.f.carry {
+            rotated_val += 1;
+        }
+        self.registers.f.carry = val & 0x80 != 0;
+        self.registers.f.zero = rotated_val == 0;
+        rotated_val
+    }
     
     fn push8(&mut self, value:u8,memory: &mut Memory) {
         self.registers.sp -= 1;
@@ -187,5 +242,22 @@ impl CPU {
         self.registers.f.carry = did_overflow;
         self.registers.f.half_carry = (self.registers.a & 0xF) + (value & 0xF) > 0xF;
         new_value
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_rl() {
+        let mut cpu = CPU::new();
+        let rotated_val = cpu.rl(0x80);
+        assert_eq!(rotated_val,0x00);
+        assert!(cpu.registers.f.carry);
+        assert!(cpu.registers.f.zero);
+        let rotated_val = cpu.rl(0x00);
+        assert_eq!(rotated_val,0x01);
+        assert!(!cpu.registers.f.carry);
+        assert!(!cpu.registers.f.zero);
     }
 }
