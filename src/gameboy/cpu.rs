@@ -94,7 +94,12 @@ impl CPU {
                 }
                 match source {
                     LoadSource8::D8 => self.registers.pc.wrapping_add(2),
-                    _ => self.registers.pc.wrapping_add(1)
+                    _ => {
+                        match target {
+                            LoadTarget8::OffsetA8 => self.registers.pc.wrapping_add(2),
+                            _ => self.registers.pc.wrapping_add(1)
+                        }
+                    }
                 }
             },
             Instruction::XOR8(ref register) => {
@@ -122,10 +127,30 @@ impl CPU {
             Instruction::INC8(ref register) => {
                 self.registers.set_8(register,self.registers.get_8(register) + 1);
                 self.registers.pc.wrapping_add(1)
+            },
+            //Push PC onto the stack and then jump to address specified by next 2 bytes
+            Instruction::CALL(condition) => {
+                match condition {
+                    CallCondition::None => {
+                        self.push16(self.registers.pc,memory);
+                        memory.read_16(self.registers.pc+1)
+                    }
+                }
+                
             }
         }
             
         }
+    
+    fn push8(&mut self, value:u8,memory: &mut Memory) {
+        self.registers.sp -= 1;
+        memory.write_8(self.registers.sp,value);
+    }
+
+    fn push16(&mut self, value:u16,memory: &mut Memory) {
+        self.push8((value >> 8) as u8, memory);
+        self.push8((value & 0x00FF) as u8,memory);
+    }
     
     fn jr(&mut self, should_jump:bool,value:i8) -> u16 {
         if should_jump {

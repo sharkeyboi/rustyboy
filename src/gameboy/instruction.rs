@@ -7,7 +7,13 @@ pub enum Instruction {
     LD8(LoadSource8,LoadTarget8),
     BIT(LoadSource8,u8),
     JR(JumpCondition,LoadSource8),
-    INC8(Register8)
+    INC8(Register8),
+    CALL(CallCondition)
+}
+
+#[derive(Debug)]
+pub enum CallCondition {
+    None
 }
 
 #[derive(Debug)]
@@ -89,9 +95,12 @@ impl Instruction {
             0x0E => Some(Instruction::LD8(LoadSource8::D8,LoadTarget8::Reg(Register8::C))), //LD C D8
             0x3E => Some(Instruction::LD8(LoadSource8::D8,LoadTarget8::Reg(Register8::A))), //LD A D8
             0xE2 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::OffsetAddress(Register8::C))), // LD (C) A
-            0x0C => Some(Instruction::INC8(Register8::C)), // INC C,
+            0x0C => Some(Instruction::INC8(Register8::C)), // INC C
             0x77 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::Address(Register16::HL))), // LD (HL) A
             0xe0 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::OffsetA8)), // LD (a8) A
+            0x11 => Some(Instruction::LD16(LoadSource16::D16,LoadTarget16::Reg(Register16::DE))), // LD DE d16
+            0x1A => Some(Instruction::LD8(LoadSource8::Address(Register16::DE),LoadTarget8::Reg(Register8::A))), // LD A (DE)
+            0xCD => Some(Instruction::CALL(CallCondition::None)), // Call a16
             _ => None
         }
     }
