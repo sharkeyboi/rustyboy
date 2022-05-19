@@ -27,7 +27,7 @@ impl CPU {
             self.execute(instruction, memory)
         } else {
             let description = format!("0x{}{:x}", if prefixed { "CB" } else { "" }, instruction_byte);
-            panic!("Unkown instruction found for: {}", description)
+            panic!("Unkown instruction found for: {}. PC: {:#06x}", description,self.registers.pc)
         };
         self.registers.pc = next_pc;
     }
@@ -96,7 +96,11 @@ impl CPU {
                         let curr_address = self.registers.get_16(register);
                         memory.write_8(curr_address,source_val);
                         self.registers.set_16(register,curr_address+1);
-                    }
+                    },
+                    LoadTarget8::AddressD8 => {
+                        let curr_address = memory.read_16(self.registers.pc+1);
+                        memory.write_8(curr_address,source_val)
+                    },
                     _ => panic!("Error target {:?} not implemented",target)
                 }
                 match source {
@@ -104,6 +108,7 @@ impl CPU {
                     _ => {
                         match target {
                             LoadTarget8::OffsetA8 => self.registers.pc.wrapping_add(2),
+                            LoadTarget8::AddressD8 => self.registers.pc.wrapping_add(3),
                             _ => self.registers.pc.wrapping_add(1)
                         }
                     }
@@ -127,12 +132,17 @@ impl CPU {
                     _ => panic!("JR Source {:?} not implemented",source)
                 };
                 let should_jump = match condition {
-                    JumpCondition::NZ => !self.registers.f.zero
+                    JumpCondition::NZ => !self.registers.f.zero,
+                    JumpCondition::Z => self.registers.f.zero
                 };
                 self.jr(should_jump,source_val)
             },
             Instruction::INC8(ref register) => {
                 self.registers.set_8(register,self.registers.get_8(register) + 1);
+                self.registers.pc.wrapping_add(1)
+            },
+            Instruction::INC16(ref register) => {
+                self.registers.set_16(register,self.registers.get_16(register) + 1);
                 self.registers.pc.wrapping_add(1)
             },
             //Push PC onto the stack and then jump to address specified by next 2 bytes
@@ -144,6 +154,9 @@ impl CPU {
                     }
                 }
                 
+            },
+            Instruction::RET => {
+                self.pop16(memory) + 3
             },
             Instruction::PUSH(ref register) => {
                 let source_val = self.registers.get_16(register);
@@ -167,12 +180,31 @@ impl CPU {
                 self.registers.set_16(register,new_val);
                 self.registers.pc.wrapping_add(1)
             },
+            Instruction::DEC8(ref register) => {
+                self.registers.set_8(register,self.registers.get_8(register)-1);
+                self.registers.pc.wrapping_add(1)
+            },
+            Instruction::CP(ref source) => {
+                let source_val = match source {
+                    LoadSource8::D8 => {
+                        memory.read_8(self.registers.pc+1)
+                    },
+                    _ => panic!("Error: CP source {:?} not implemented",source)
+                };
+                self.cp(source_val);
+                self.registers.pc.wrapping_add(2)
+            },
             _ => {
                 panic!("Error, instruction {:?} not implemented",instruction);
             }
         }
             
         }
+
+
+    fn cp(&mut self, value: u8) {
+        self.registers.f.zero = value == self.registers.a
+    }
 
     fn pop8(&mut self, memory: &Memory) -> u8 {
         let value = memory.read_8(self.registers.sp);

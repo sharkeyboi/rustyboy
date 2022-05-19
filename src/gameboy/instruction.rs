@@ -11,9 +11,12 @@ pub enum Instruction {
     INC8(Register8),
     CALL(CallCondition),
     PUSH(Register16), // TODO: Verify that this should be a normal stack push, EG. Decrement SP, save upper byte, decrement again, save lower byte.
+    RET,
     RL(LoadSource8),
     INC16(Register16),
-    POP(Register16)
+    POP(Register16),
+    DEC8(Register8),
+    CP(LoadSource8)
 }
 
 #[derive(Debug)]
@@ -28,7 +31,7 @@ pub enum LoadSource8 {
 
 #[derive(Debug)]
 pub enum LoadTarget8 {
-    Reg(Register8), Address(Register16), AddressDec(Register16), AddressInc(Register16),OffsetAddress(Register8), OffsetA8
+    Reg(Register8), Address(Register16), AddressDec(Register16), AddressInc(Register16),OffsetAddress(Register8), OffsetA8, AddressD8
 }
 
 #[derive(Debug)]
@@ -43,7 +46,7 @@ pub enum LoadTarget16 {
 
 #[derive(Debug)]
 pub enum JumpCondition {
-    NZ
+    NZ, Z
 }
 
 #[derive(Debug)]
@@ -113,6 +116,17 @@ impl Instruction {
             0x17 => Some(Instruction::RL(LoadSource8::Reg(Register8::A))), // RL A
             0x22 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::AddressInc(Register16::HL))), // LD (HL+) A
             0xC1 => Some(Instruction::POP(Register16::BC)), // POP BC
+            0x05 => Some(Instruction::DEC8(Register8::B)), // DEC B
+            0x23 => Some(Instruction::INC16(Register16::HL)), // INC HL
+            0xC9 => Some(Instruction::RET), // RET
+            0x13 => Some(Instruction::INC16(Register16::DE)), // INC DE
+            0x7B => Some(Instruction::LD8(LoadSource8::Reg(Register8::E),LoadTarget8::Reg(Register8::A))), // LD A E
+            0xFE => Some(Instruction::CP(LoadSource8::D8)), // CP d8
+            0xEA => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::AddressD8)), // LD (a16) A
+            0x3D => Some(Instruction::DEC8(Register8::A)), // DEC A
+            0x28 => Some(Instruction::JR(JumpCondition::Z,LoadSource8::D8)), // JR Z s8
+            0x67 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::Reg(Register8::H))), // LD H A
+            0x57 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::Reg(Register8::D))), // LD D A
             _ => None
         }
     }
