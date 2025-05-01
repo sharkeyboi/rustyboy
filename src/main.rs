@@ -13,6 +13,6 @@ fn main() {
     }
     
 
-    gameboy.load_boot_rom("roms/dmg_boot.bin").expect("Failed to load boot ROM");
+    gameboy.load_boot_rom("roms/dmg_boot.bin").expect("ROM should be present in the path");
     gameboy.run();
 }

@@ -16,6 +16,10 @@ impl CPU {
 
         //Read one byte from memory at the current pc as an instruction.
         let mut instruction_byte = memory.read_8(self.registers.pc);
+        // Check if instruction byte is 0x21
+        if(self.registers.pc == 0x5D) {
+            println!("Here");
+        }
 
         //If instruction byte is 0xCB, it is a prefixed instruction. Handle separately
         let prefixed = instruction_byte == 0xCB;
@@ -70,6 +74,10 @@ impl CPU {
                     },
                     LoadSource8::Address(ref register) => {
                         memory.read_8(self.registers.get_16(register))
+                    },
+                    LoadSource8::OffsetA8 => {
+                        let curr_address = 0xFF00 + memory.read_8(self.registers.pc+1) as u16;
+                        memory.read_8(curr_address)
                     }
                 };
                 match target {

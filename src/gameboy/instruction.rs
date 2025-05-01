@@ -26,7 +26,7 @@ pub enum CallCondition {
 
 #[derive(Debug)]
 pub enum LoadSource8 {
-    Reg(Register8),Address(Register16),D8
+    Reg(Register8),Address(Register16),D8, OffsetA8
 }
 
 #[derive(Debug)]
@@ -99,14 +99,13 @@ impl Instruction {
             0x31 => Some(Instruction::LD16(LoadSource16::D16,LoadTarget16::Reg(Register16::SP))), //LD SP D16
             0xAF => Some(Instruction::XOR8(Register8::A)), //XOR A
             0x21 => Some(Instruction::LD16(LoadSource16::D16, LoadTarget16::Reg(Register16::HL))), // LD HL D16
-            0x32 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::AddressDec(Register16::HL))), // LD (HL) A
+            0x32 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::AddressDec(Register16::HL))), // LD (HL-) A
             0x20 => Some(Instruction::JR(JumpCondition::NZ,LoadSource8::D8)), // JR NZ D8
             0x0E => Some(Instruction::LD8(LoadSource8::D8,LoadTarget8::Reg(Register8::C))), //LD C D8
             0x3E => Some(Instruction::LD8(LoadSource8::D8,LoadTarget8::Reg(Register8::A))), //LD A D8
             0xE2 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::OffsetAddress(Register8::C))), // LD (C) A
             0x0C => Some(Instruction::INC8(Register8::C)), // INC C
             0x77 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::Address(Register16::HL))), // LD (HL) A
-            0xe0 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::OffsetA8)), // LD (a8) A
             0x11 => Some(Instruction::LD16(LoadSource16::D16,LoadTarget16::Reg(Register16::DE))), // LD DE d16
             0x1A => Some(Instruction::LD8(LoadSource8::Address(Register16::DE),LoadTarget8::Reg(Register8::A))), // LD A (DE)
             0xCD => Some(Instruction::CALL(CallCondition::None)), // Call a16
@@ -127,6 +126,13 @@ impl Instruction {
             0x28 => Some(Instruction::JR(JumpCondition::Z,LoadSource8::D8)), // JR Z s8
             0x67 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::Reg(Register8::H))), // LD H A
             0x57 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::Reg(Register8::D))), // LD D A
+            0x5f => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::Reg(Register8::E))), // LD E A
+            0x04 => Some(Instruction::INC8(Register8::B)), // INC B
+            0x3C => Some(Instruction::INC8(Register8::A)), // INC A
+            0x1E => Some(Instruction::LD8(LoadSource8::D8,LoadTarget8::Reg(Register8::E))), // LD E d8
+            0xe0 => Some(Instruction::LD8(LoadSource8::Reg(Register8::A),LoadTarget8::OffsetA8)), // LD (a8) A
+            0xF0 => Some(Instruction::LD8(LoadSource8::OffsetA8, LoadTarget8::Reg(Register8::A))), // LD A, (a8)
+            0x44 => Some(Instruction::LD8(LoadSource8::Reg(Register8::H),LoadTarget8::Reg(Register8::B))), // LD B H
             _ => None
         }
     }
